@@ -13,6 +13,8 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 const userSchema = new mongoose.Schema({
+    fullName: String,
+    email: String,
     username: String,
     password: String,
     isDeleted: {
@@ -24,6 +26,8 @@ const userSchema = new mongoose.Schema({
 userSchema.pre("save", function () {
     console.log("\n[Pre-save hook]");
 
+    if (!this.isModified("password")) return;
+
     this.password = "hashed_" + this.password;
 
     console.log("Password has been hashed.");
@@ -33,13 +37,13 @@ userSchema.pre(/^find/, function () {
     console.log("\n[Pre-find hook]");
 
     this.find({
-        isDeleted: false
+        isDeleted: { $ne: true }
     });
 
-    console.log("Automatically filtering isDeleted: true");
+    console.log("Automatically filtering out documents with isDeleted: true");
 });
 
-const User = mongoose.model("User", userSchema);
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -88,7 +92,7 @@ async function testPreSave() {
         const user = new User({
             username: username,
             password: password,
-            isDeleted: false
+            email: `${username}@example.com`
         });
 
         console.log("\nBefore save:");
@@ -111,21 +115,24 @@ async function testPreFind() {
     console.log("\n===== TEST PRE-FIND HOOK =====");
 
     try {
+        const total = await User.countDocuments();
+        const deleted = await User.collection.countDocuments({ isDeleted: true });
+
         const users = await User.find();
 
-        console.log("\nUsers returned by User.find():");
+        console.log(`\nTotal documents in collection: ${total}`);
+        console.log(`Soft-deleted documents (isDeleted: true): ${deleted}`);
+        console.log(`Users returned by User.find(): ${users.length}`);
 
-        if (users.length === 0) {
-            console.log("No users found.");
-        } else {
-            users.forEach((user) => {
-                console.log("------------------------------");
-                console.log("ID:", user._id);
-                console.log("Username:", user.username);
-                console.log("Password:", user.password);
-                console.log("isDeleted:", user.isDeleted);
-            });
-        }
+        users.forEach((user) => {
+            console.log("------------------------------");
+            console.log("ID:", user._id);
+            console.log("Full name:", user.fullName);
+            console.log("Email:", user.email);
+            console.log("Username:", user.username);
+            console.log("Password:", user.password);
+            console.log("isDeleted:", user.isDeleted);
+        });
 
     } catch (error) {
         console.log("\nError:", error.message);

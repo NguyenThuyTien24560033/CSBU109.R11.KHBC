@@ -1,0 +1,17 @@
+{
+  "name": "lab01-hw",
+  "version": "1.0.0",
+  "description": "",
+  "main": "homework_sql_transaction.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^18.0.7",
+    "mongoose": "^9.11.1",
+    "mysql2": "^3.24.5"
+  }
+}
